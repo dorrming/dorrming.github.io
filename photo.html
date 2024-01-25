@@ -1,21 +1,194 @@
 <!DOCTYPE html>
 <head>
-  <body>
-    <div class="product-list">
-            
-      <a href="#" class="product">
-          <img src="image/soyun.jpeg" width="700">
-          </a>
-      <a href="#" class="product">
-          <img src="image/yui.jpeg" width="700">
-          </a>
-      <a href="#" class="product">
-          <img src="image/together.jpeg" width="700">
-          </a>
-          <a href="#" class="product">
-            <img src="image/christmas.jpeg" width="700">
-            </a>
-    </div>
-
-  </body>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 </head>
+<body>
+  <div class="product-list">
+          
+    <a href="#" class="product">
+        <img src="image/soyun.jpeg" width="700">
+        </a>
+    <a href="#" class="product">
+        <img src="image/yui.jpeg" width="700">
+        </a>
+    <a href="#" class="product">
+        <img src="image/together.jpeg" width="700">
+        </a>
+        <a href="#" class="product">
+          <img src="image/christmas.jpeg" width="700">
+          </a>
+  </div>
+  <script>
+    $(function(){
+      
+    initSnow();
+    
+    function initSnow() {
+      var defaultOptions = {
+        color: '#ECF2FA',
+        radius: [0.5, 3.0],
+        speed: [1, 2],
+        wind: [2, 4]
+      };
+      
+      var renderSnow = function() {
+    
+        var animFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+    
+        var random = function random(start, end) {
+          return Math.floor(Math.random() * (end - start + 1) + start);
+        };
+    
+        var SnowItem = function SnowItem(canvas) {
+          var drawFn = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+    
+          var options = defaultOptions;
+          var radius = options.radius;
+          var speed = options.speed;
+          var wind = options.wind;
+          var color = options.color;
+    
+          var params = {
+            color: color,
+            x: random(0, canvas.offsetWidth),
+            y: random(-canvas.offsetHeight, 0),
+            radius: random(radius[0], radius[1]),
+            speed: random(speed[0], speed[1]),
+            wind: random(wind[0], wind[1]),
+            opacity: 0.5 + Math.random() * 0.5,
+            counter: 0,
+            sign: Math.random() < 0.5 ? 1 : -1,
+            random: Math.random(),
+            isResized: false
+          };
+          var ctx = canvas.getContext('2d');
+    
+          var updateData = function updateData() {
+            params.x = random(0, canvas.offsetWidth);
+            params.y = random(-canvas.offsetHeight, 0);
+          };
+    
+          var resized = function resized() {
+            return params.isResized = true;
+          };
+    
+          var drawDefault = function drawDefault() {
+            ctx.beginPath();
+            ctx.globalAlpha = params.opacity;
+            ctx.arc(params.x, params.y, params.radius, 0, 2 * Math.PI);
+            ctx.fillStyle = params.color;
+            ctx.fill();
+            ctx.closePath();
+          };
+    
+          var draw = drawFn ? function () {
+            return drawFn(ctx, params);
+          } : drawDefault;
+    
+          var translate = function translate() {
+            // params.x += params.wind;
+            // params.y += params.speed;
+            params.counter += params.speed / 100;
+            params.x += params.sign * params.speed * Math.cos(params.counter) * params.random;
+            params.y += params.speed;
+          };
+    
+          var onDown = function onDown() {
+            if (params.y < canvas.offsetHeight) return;
+    
+            if (params.isResized) {
+              updateData();
+              params.isResized = false;
+            } else {
+              params.y = 0;
+              params.x = random(0, canvas.offsetWidth);
+            }
+          };
+    
+          var update = function update() {
+            translate();
+            onDown();
+          };
+    
+          return {
+            update: update,
+            resized: resized,
+            draw: draw
+          };
+        };
+    
+        var Snow = function Snow(canvasSelector, count) {
+          var canvas = document.querySelector(canvasSelector);
+    
+          var ctx = canvas.getContext('2d');
+          var snowflakes = [];
+    
+          var add = function add(item) {
+            return snowflakes.push(item(canvas));
+          };
+    
+          var update = function update() {
+            return snowflakes.forEach(function (el) {
+              return el.update();
+            });
+          };
+    
+          var resize = function resize() {
+            ctx.canvas.width = canvas.offsetWidth;
+            ctx.canvas.height = canvas.offsetHeight;
+    
+            snowflakes.forEach(function (el) {
+              return el.resized();
+            });
+          };
+    
+          var draw = function draw() {
+            ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+            snowflakes.forEach(function (el) {
+              return el.draw();
+            });
+          };
+    
+          var events = function events() {
+            window.addEventListener('resize', resize);
+          };
+    
+          var loop = function loop() {
+            draw();
+            update();
+            animFrame(loop);
+          };
+    
+          var init = function init() {
+            var _loop = function _loop(i) {
+              add(function (canvas) {
+                return SnowItem(canvas, null, i);
+              });
+            };
+    
+            for (var i = 0; i < count; i++) {
+              _loop(i);
+            }
+            events();
+            loop();
+          };
+    
+          init(count);
+          resize();
+    
+          return { add: add, resize: resize };
+        };
+    
+        $('body').append('<canvas id="snowParticleEffect" style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: 100; pointer-events: none;"></canvas>')
+        var amount = 10; // 1 ~ 10
+        var snowCount = Math.floor(window.innerWidth * window.innerHeight / (10000 / amount));
+        Snow('#snowParticleEffect', snowCount);
+      }
+    
+      renderSnow();
+    }
+    
+    });
+    </script>
+  </body>
+</html>
